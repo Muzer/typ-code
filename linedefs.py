@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-stations = [
+bakerloo = [
         # Bakerloo Line
         ("B", "BST"),
         ("B", "CHX"),
@@ -26,7 +26,9 @@ stations = [
         ("B", "WAR"),
         ("B", "WLO"),
         ("B", "WEM"),
-        ("B", "WJN"),
+        ("B", "WJN")
+]
+central = [
         # Central Line
         ("C", "BNK"),
         ("C", "BDE"),
@@ -76,7 +78,9 @@ stations = [
         ("C", "WAC"),
         ("C", "WRP"),
         ("C", "WCT"),
-        ("C", "WFD"),
+        ("C", "WFD")
+]
+district = [
         # District Line
         ("D", "ACT"),
         ("D", "ALE"),
@@ -134,7 +138,9 @@ stations = [
         ("D", "WMS"),
         ("D", "WCL"),
         ("D", "WDN"),
-        ("D", "WMP"),
+        ("D", "WMP")
+]
+hamcirc = [
         # H&C and Circle Lines
         ("H", "ALD"),
         ("H", "ALE"),
@@ -172,7 +178,9 @@ stations = [
         ("H", "VIC"),
         ("H", "WHM"),
         ("H", "WMS"),
-        ("H", "WCL"),
+        ("H", "WCL")
+]
+jubilee = [
         # Jubilee Line
         ("J", "BST"),
         ("J", "BER"),
@@ -200,7 +208,9 @@ stations = [
         ("J", "WHM"),
         ("J", "WHD"),
         ("J", "WMS"),
-        ("J", "WLG"),
+        ("J", "WLG")
+]
+metropolitan = [
         # Metropolitan Line
         ("M", "ALD"),
         ("M", "AME"),
@@ -234,7 +244,9 @@ stations = [
         ("M", "UXB"),
         ("M", "WAT"),
         ("M", "WPK"),
-        ("M", "WHR"),
+        ("M", "WHR")
+]
+northern = [
         # Northern Line
         ("N", "ANG"),
         ("N", "ARC"),
@@ -285,7 +297,9 @@ stations = [
         ("N", "WST"),
         ("N", "WLO"),
         ("N", "WFY"),
-        ("N", "WSP"),
+        ("N", "WSP")
+]
+piccadilly = [
         # Piccadilly Line
         ("P", "ACT"),
         ("P", "ALP"),
@@ -339,7 +353,9 @@ stations = [
         ("P", "TGR"),
         ("P", "TPL"),
         ("P", "UXB"),
-        ("P", "WGN"),
+        ("P", "WGN")
+]
+victoria = [
         # Victoria Line
         ("V", "BHR"),
         ("V", "BRX"),
@@ -356,7 +372,9 @@ stations = [
         ("V", "VUX"),
         ("V", "VIC"),
         ("V", "WAL"),
-        ("V", "WST"),
+        ("V", "WST")
+]
+waterloocity = [
         # Waterloo and City Line
         ("W", "BNK"),
         ("W", "WLO")
