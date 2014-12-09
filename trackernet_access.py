@@ -5,7 +5,6 @@ import urllib.parse
 import station
 import datetime
 import locale
-import pprint
 
 predictionDetailed = \
     "http://cloud.tfl.gov.uk/TrackerNet/PredictionDetailed/{line}/{station}"
