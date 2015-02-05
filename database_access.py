@@ -63,7 +63,16 @@ def addTrainObject(connection, t, platformObj, stationObj):
             platformObj.number))
     else:
         print("Duplicate train ignored")
-    
+
+def filterTrainsByStationIDAndDate(stationCode, setNo, tripNo, aroundDate,
+    line):
+    query = "SELECT * FROM trains WHERE stationCode = %s AND setNo = %s AND " \
+        "tripNo = %s AND whenCreated BETWEEN %s AND %s " \
+        "AND stationLineCode = %s ORDER BY secondsTo ASC"
+    cursor.execute(query, (stationCode, setNo, tripNo, aroundDate -
+      datetime.timedelta(hours=12), aroundDate + datetime.timedelta(hours=12),
+      stationLineCode))
+    return cursor.fetchall()
 
 def addPlatformTree(connection, platformObj, stationObj):
     addPlatformObjectIfNotExists(connection, platformObj, stationObj)
