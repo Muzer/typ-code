@@ -2,6 +2,8 @@
 
 import mysql.connector
 import station
+import datetime
+import timetable_analyser
 
 def connectToDb():
     return mysql.connector.connect(user='rtlul', password='dummypassword',
@@ -64,20 +66,70 @@ def addTrainObject(connection, t, platformObj, stationObj):
     else:
         print("Duplicate train ignored")
 
-def filterTrainsByStationIDAndDate(stationCode, setNo, tripNo, aroundDate,
+def addTrainArrDepObject(connection, t, platformObj, stationObj, arrTime,
+    depTime):
+    query = "SELECT EXISTS(SELECT 1 FROM trainsArrDep WHERE " \
+            "stationLineCode=%s AND stationCode=%s AND platformNumber=%s AND" \
+            " arrTime=%s AND deptime=%s AND lcid=%s)"
+    cursor = connection.cursor()
+    cursor.execute(query, (stationObj.lineCode, stationObj.code,
+        platformObj.number, arrTime, depTime, t.lcid))
+    if cursor.fetchall()[0][0] == 0: # doesn't exist
+        delTrainArrDepObject(connection, stationObj.code, t.setNo, t.tripNo,
+            arrTime, stationObj.lineCode)
+        query = "INSERT INTO trainsArrDep(lcid, setNo, tripNo, destination, " \
+                "destCode, ln, stationCode, stationLineCode, platformNumber," \
+                " arrTime, depTime) VALUES(%s, %s, %s, %s, %s, %s, %s, %s, " \
+                "%s, %s, %s)"
+        cursor.execute(query, (t.lcid, t.setNo, t.tripNo, t.destination,
+          t.destCode, t.ln, stationObj.code, stationObj.lineCode,
+          platformObj.number, arrTime, depTime))
+    else:
+        print("Duplicate train arrival/departure object ignored")
+
+def findTrainArrDepObject(connection, stationCode, setNo, tripNo, aroundDate,
     line):
-    query = "SELECT * FROM trains WHERE stationCode = %s AND setNo = %s AND " \
-        "tripNo = %s AND whenCreated BETWEEN %s AND %s " \
-        "AND stationLineCode = %s ORDER BY secondsTo ASC"
+    query = "SELECT arrTime, depTime FROM trainsArrDep WHERE " \
+        "stationCode = %s AND setNo = %s AND tripNo = %s AND " \
+        "arrTime BETWEEN %s AND %s AND stationLineCode = %s"
+    cursor = connection.cursor()
     cursor.execute(query, (stationCode, setNo, tripNo, aroundDate -
-      datetime.timedelta(hours=12), aroundDate + datetime.timedelta(hours=12),
-      stationLineCode))
+        datetime.timedelta(hours=12),
+        aroundDate + datetime.timedelta(hours=12), line))
     return cursor.fetchall()
+
+def delTrainArrDepObject(connection, stationCode, setNo, tripNo, aroundDate,
+    line):
+    query = "DELETE FROM trainsArrDep WHERE stationCode = %s AND setNo = %s " \
+            "AND tripNo = %s AND arrTime BETWEEN %s and %s AND " \
+            "stationLineCode = %s"
+    cursor = connection.cursor()
+    cursor.execute(query, (stationCode, setNo, tripNo, aroundDate -
+        datetime.timedelta(hours=12),
+        aroundDate + datetime.timedelta(hours=12), line))
+
+def filterTrainsByStationIDAndDate(connection, stationCode, setNo, tripNo,
+    aroundDate, line):
+    query = "SELECT lcid, setNo, tripNo, secondsTo, location, destination, " \
+        "destCode, trackCode, ln, whenCreated FROM trains WHERE " \
+        "stationCode = %s AND setNo = %s AND tripNo = %s AND " \
+        "whenCreated BETWEEN %s AND %s AND stationLineCode = %s " \
+        "ORDER BY secondsTo ASC, whenCreated DESC"
+    cursor = connection.cursor()
+    cursor.execute(query, (stationCode, setNo, tripNo, aroundDate -
+        datetime.timedelta(hours=12),
+        aroundDate + datetime.timedelta(hours=12), line))
+    return map(lambda item : station.Train(item[0], item[1], item[2], item[3],
+        item[4], item[5], item[6], item[7], item[8], item[9]),
+        cursor.fetchall())
 
 def addPlatformTree(connection, platformObj, stationObj):
     addPlatformObjectIfNotExists(connection, platformObj, stationObj)
     for trainObj in platformObj.trains:
         addTrainObject(connection, trainObj, platformObj, stationObj)
+        # TODO move this out of here
+        timetable_analyser.setTrainArrDepFromPrev(connection, trainObj,
+            platformObj, stationObj)
 
 def addStationTree(connection, stationObj):
     addStationObjectIfNotExists(connection, stationObj) # Add station object

@@ -2,6 +2,7 @@
 
 import trackernet_access
 import database_access
+import timetable_analyser
 import linedefs
 import time
 
@@ -14,6 +15,7 @@ def main():
             stationObj = trackernet_access.getStation(line, station)
             database_access.addStationTree(connection, stationObj)
             print("Done")
+            # Add train arrival/departure object
             # sleep such that the time between gets will be 30 seconds,
             # factoring in get time of about half a second
             time.sleep((30-0.5*len(linedefs.victoria))/len(linedefs.victoria))
