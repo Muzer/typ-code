@@ -87,8 +87,8 @@ def addTrainArrDepObject(connection, t, platformObj, stationObj, arrTime,
     else:
         print("Duplicate train arrival/departure object ignored")
 
-def findTrainArrDepObject(connection, stationCode, setNo, tripNo, aroundDate,
-    line):
+def findTrainArrDepObjectDate(connection, stationCode, setNo, tripNo, 
+    aroundDate, line):
     query = "SELECT arrTime, depTime FROM trainsArrDep WHERE " \
         "stationCode = %s AND setNo = %s AND tripNo = %s AND " \
         "arrTime BETWEEN %s AND %s AND stationLineCode = %s"
@@ -96,6 +96,14 @@ def findTrainArrDepObject(connection, stationCode, setNo, tripNo, aroundDate,
     cursor.execute(query, (stationCode, setNo, tripNo, aroundDate -
         datetime.timedelta(hours=12),
         aroundDate + datetime.timedelta(hours=12), line))
+    return cursor.fetchall()
+
+def findTrainArrDepObjectsNoDate(connection, stationCode, setNo, tripNo, line):
+    query = "SELECT arrTime, depTime FROM trainsArrDep WHERE " \
+        "stationCode = %s AND setNo = %s AND tripNo = %s AND " \
+        "stationLineCode = %s"
+    cursor = connection.cursor()
+    cursor.execute(query, (stationCode, setNo, tripNo, line))
     return cursor.fetchall()
 
 def delTrainArrDepObject(connection, stationCode, setNo, tripNo, aroundDate,

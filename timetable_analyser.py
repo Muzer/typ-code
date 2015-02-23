@@ -2,6 +2,8 @@
 
 import database_access
 import datetime
+import math
+import operator
 
 #station="VIC"
 #line="V"
@@ -12,8 +14,9 @@ import datetime
 dwellTime=20
 
 def setTrainArrDepFromPrev(connection, train, platform, station):
-    results = database_access.findTrainArrDepObject(connection, station.code,
-        train.setNo, train.tripNo, train.whenCreated, station.lineCode)
+    results = database_access.findTrainArrDepObjectDate(connection,
+        station.code, train.setNo, train.tripNo, train.whenCreated,
+        station.lineCode)
     if len(results) == 0:
         arrTime = train.whenCreated + datetime.timedelta(
             seconds=train.secondsTo)
@@ -51,36 +54,60 @@ def getTrainArrDep(connection, stationCode, setNo, tripNo, aroundDate, line):
     # Get the latest time for it to still be in the station (before depart)
     latestArrived = None
     for latestArrived in arrivedTimes:
-      pass
+        pass
 
     # Get the most accurate time for predicted arrival (LUL's predictions)
     arrLulPred = None
     for arrLulPred in results:
-      if arrLulPred.secondsTo != 0:
-        break
+        if arrLulPred.secondsTo != 0:
+            break
 
     # Predicted arrival time is earliest of arrived time and predicted arrive
     arrPredTime = None
     if arrLulPred != None:
-      arrPredTime = arrLulPred.whenCreated + \
-          datetime.timedelta(seconds=arrLulPred.secondsTo)
+        arrPredTime = arrLulPred.whenCreated + \
+            datetime.timedelta(seconds=arrLulPred.secondsTo)
     if earliestArrived != None and (arrPredTime == None or 
         earliestArrived.whenCreated < arrPredTime):
-      arrPredTime = earliestArrived.whenCreated
+        arrPredTime = earliestArrived.whenCreated
 
     depPredTime = None
     if latestArrived != None:
-      depPredTime = latestArrived.whenCreated
+        depPredTime = latestArrived.whenCreated
     elif arrPredTime != None:
-      depPredTime = arrPredTime + datetime.timedelta(seconds=dwellTime)
+        depPredTime = arrPredTime + datetime.timedelta(seconds=dwellTime)
     
     return (arrPredTime, depPredTime)
 
+def get_seconds(time):
+    return time.hour * 60 * 60 + time.minute * 60 + time.second
 
-#connection = database_access.connectToDb()
-#arrPredTime, depPredTime = getTrainArrDep(connection, station, setNo, tripNo,
-#      aroundDate, line)
-#if arrPredTime == None or depPredTime == None:
-#    print("Something went wrong. Did you actually specify a real train?")
-#print(arrPredTime)
-#print(depPredTime)
+def get_time(seconds):
+    return datetime.time(hour=int(seconds + 0.5) // (60 * 60),
+        minute=(int(seconds + 0.5) % (60 * 60)) // 60,
+        second=int(seconds + 0.5) % 60)
+
+def median(dictArray, getAttr):
+    results = sorted(dictArray, key=lambda x: x[getAttr].time())
+    if len(results) < 1:
+        return None
+    if len(results) % 2 == 1:
+        return results[(len(results) - 1) // 2][getAttr].time()
+    if len(results) % 2 == 0:
+        return get_time((get_seconds(results[len(results)
+          // 2 + 1][getAttr].time()) + get_seconds(results[len(results)
+            // 2][getAttr].time())) / 2)
+
+def calculate_median(connection, stationCode, setNo, tripNo, line, dayFrom,
+    dayTo): # dayFrom is minimum day of week (where 0 is monday), dayTo is max
+            # plus one day of the week
+    results = database_access.findTrainArrDepObjectsNoDate(connection,
+        stationCode, setNo, tripNo, line)
+    results = [x for x in results if dayFrom <= x[0].weekday() < dayTo]
+    
+    # Calculate median
+    arrMedian = median(results, 0) # arrTime
+    depMedian = median(results, 1) # depTime
+
+    print(results)
+    return (arrMedian, depMedian)
