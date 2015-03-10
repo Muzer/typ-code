@@ -87,6 +87,24 @@ def addTrainArrDepObject(connection, t, platformObj, stationObj, arrTime,
     else:
         print("Duplicate train arrival/departure object ignored")
 
+def findTrainArrDepObjectsNoIds(connection, stationCode, aroundDate, line):
+    query = "SELECT lcid, setNo, tripNo, destination, destCode, ln, " \
+            "platformNumber, arrTime, depTime FROM trainsArrDep WHERE " \
+            "stationCode = %s AND (arrTime BETWEEN %s AND %s OR depTime " \
+            "BETWEEN %s AND %s) AND stationLineCode = %s ORDER BY depTime, " \
+            "arrTime"
+    cursor = connection.cursor()
+    cursor.execute(query, (stationCode, aroundDate - datetime.timedelta(
+        hours=1), aroundDate + datetime.timedelta(hours=1), aroundDate -
+        datetime.timedelta(hours=1), aroundDate + datetime.timedelta(hours=1),
+        line))
+    results = cursor.fetchall()
+    return map(lambda item : {"lcid": item[0], "setNo": item[1],
+      "tripNo": item[2], "destination": item[3], "destCode": item[4],
+      "ln": item[5], "platformNumber": item[6],
+      "arrTime": item[7].strftime("%H%M"), "depTime": item[8].strftime("%H%M")
+      }, results)
+
 def findTrainArrDepObjectDate(connection, stationCode, setNo, tripNo, 
     aroundDate, line):
     query = "SELECT arrTime, depTime FROM trainsArrDep WHERE " \
