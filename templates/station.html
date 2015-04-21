@@ -59,8 +59,10 @@
           <th>Dest Code</th>
           <th>Line</th>
           <th>Platform Number</th>
-          <th>Arr</th>
-          <th>Dep</th>
+          <th>Plan Arr</th>
+          <th>Plan Dep</th>
+          <th>Act Arr</th>
+          <th>Act Dep</th>
         </tr></thead>
         {% for train in results %}
         <tr>
@@ -71,8 +73,10 @@
           <td>{{ train.destCode }}</td>
           <td>{{ train.ln }}</td>
           <td>{{ train.platformNumber }}</td>
-          <td>{{ train.arrTime }}</td>
-          <td>{{ train.depTime }}</td>
+          <td>{{ train.sArrTime }}</td>
+          <td>{{ train.sDepTime }}</td>
+          <td>{{ train.aArrTime }}</td>
+          <td>{{ train.aDepTime }}</td>
         </tr>
         {% endfor %}
       </table>

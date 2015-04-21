@@ -4,6 +4,7 @@ import database_access
 import datetime
 import math
 import operator
+import collections
 
 #station="VIC"
 #line="V"
@@ -95,19 +96,30 @@ def median(dictArray, getAttr):
         return results[(len(results) - 1) // 2][getAttr].time()
     if len(results) % 2 == 0:
         return get_time((get_seconds(results[len(results)
-          // 2 + 1][getAttr].time()) + get_seconds(results[len(results)
-            // 2][getAttr].time())) / 2)
+          // 2][getAttr].time()) + get_seconds(results[len(results)
+            // 2 - 1][getAttr].time())) / 2)
 
-def calculate_median(connection, stationCode, setNo, tripNo, line, dayFrom,
-    dayTo): # dayFrom is minimum day of week (where 0 is monday), dayTo is max
-            # plus one day of the week
-    results = database_access.findTrainArrDepObjectsNoDate(connection,
-        stationCode, setNo, tripNo, line)
+def mode(dictArray, getAttr):
+    counter = collections.Counter(map(lambda x: x[getAttr], dictArray))
+    return counter.most_common(1)[0][0]
+
+def calculate_median(connection, startDate, stationCode, setNo, tripNo, line,
+    dayFrom, dayTo): # dayFrom is minimum day of week (where 0 is monday),
+            # dayTo is max plus one day of the week
+    results = database_access.findTrainArrDepObjectsDateFrom(connection,
+        startDate, stationCode, setNo, tripNo, line)
     results = [x for x in results if dayFrom <= x[0].weekday() < dayTo]
     
     # Calculate median
     arrMedian = median(results, 0) # arrTime
     depMedian = median(results, 1) # depTime
+    if arrMedian == None or depMedian == None:
+        return (None, None, None, None, None)
+
+    # Modes of other useful things
+    destMode = mode(results, 2) # destination
+    dCodeMode = mode(results, 3) # destCode
+    platNoMode = mode(results, 4) # platformNumber
 
     print(results)
-    return (arrMedian, depMedian)
+    return (arrMedian, depMedian, destMode, dCodeMode, platNoMode)

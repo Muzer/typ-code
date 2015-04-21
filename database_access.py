@@ -66,6 +66,19 @@ def addTrainObject(connection, t, platformObj, stationObj):
     else:
         print("Duplicate train ignored")
 
+def addTimetableEntry(connection, setNo, tripNo, destination, destCode,
+    stationCode, stationLineCode, platformNumber, arrTime, depTime,
+    dateCreated, daysOfWeek):
+    # daysOfWeek is "W" for weekdays, "S" for Saturdays, and "U" for Sundays
+    query = "INSERT INTO timetables(setNo, tripNo, destination, destCode, " \
+            "stationCode, stationLineCode, platformNumber, arrTime, depTime," \
+            " dateCreated, daysOfWeek) VALUES(%s, %s, %s, %s, %s, %s, %s, " \
+            "%s, %s, %s, %s)"
+    cursor = connection.cursor()
+    cursor.execute(query, (setNo, tripNo, destination, destCode, stationCode,
+        stationLineCode, platformNumber, arrTime, depTime, dateCreated,
+        daysOfWeek))
+
 def addTrainArrDepObject(connection, t, platformObj, stationObj, arrTime,
     depTime):
     query = "SELECT EXISTS(SELECT 1 FROM trainsArrDep WHERE " \
@@ -102,12 +115,33 @@ def findTrainArrDepObjectsNoIds(connection, stationCode, aroundDate, line):
     return map(lambda item : {"lcid": item[0], "setNo": item[1],
       "tripNo": item[2], "destination": item[3], "destCode": item[4],
       "ln": item[5], "platformNumber": item[6],
-      "arrTime": item[7].strftime("%H%M"), "depTime": item[8].strftime("%H%M")
-      }, results)
+      "aArrTime": item[7].strftime("%H%M"),
+      "aDepTime": item[8].strftime("%H%M")}, results)
+
+def findTimetableEntriesNoIds(connection, stationCode, aroundDate, line):
+    query = "SELECT setNo, tripNo, destination, destCode, stationLineCode, " \
+            "platformNumber, arrTime, depTime FROM timetables WHERE " \
+            "stationCode = %s AND (arrTime BETWEEN %s AND %s OR depTime " \
+            "BETWEEN %s AND %s) AND stationLineCode = %s AND daysOfWeek = %s " \
+            "ORDER BY depTime, arrTime"
+    cursor = connection.cursor()
+    weekday = "S" if aroundDate.weekday() == 5 else "U" if \
+        aroundDate.weekday() == 6 else "W"
+    cursor.execute(query, (stationCode, (aroundDate - datetime.timedelta(
+        hours=1)).time(), (aroundDate + datetime.timedelta(hours=1)).time(),
+        (aroundDate - datetime.timedelta(hours=1)).time(), (aroundDate
+          + datetime.timedelta(hours=1)).time(), line, weekday))
+    results = cursor.fetchall()
+    return map(lambda item : {"setNo": item[0], "tripNo": item[1],
+      "destination": item[2], "destCode": item[3], "ln": item[4],
+      "platformNumber": item[5],
+      "sArrTime": (datetime.datetime.min + item[6]).time().strftime("%H%M"),
+      "sDepTime": (datetime.datetime.min + item[7]).time().strftime("%H%M")},
+      results)
 
 def findTrainArrDepObjectDate(connection, stationCode, setNo, tripNo, 
     aroundDate, line):
-    query = "SELECT arrTime, depTime FROM trainsArrDep WHERE " \
+    query = "SELECT arrTime, depTime, lcid FROM trainsArrDep WHERE " \
         "stationCode = %s AND setNo = %s AND tripNo = %s AND " \
         "arrTime BETWEEN %s AND %s AND stationLineCode = %s"
     cursor = connection.cursor()
@@ -116,12 +150,13 @@ def findTrainArrDepObjectDate(connection, stationCode, setNo, tripNo,
         aroundDate + datetime.timedelta(hours=12), line))
     return cursor.fetchall()
 
-def findTrainArrDepObjectsNoDate(connection, stationCode, setNo, tripNo, line):
-    query = "SELECT arrTime, depTime FROM trainsArrDep WHERE " \
-        "stationCode = %s AND setNo = %s AND tripNo = %s AND " \
-        "stationLineCode = %s"
+def findTrainArrDepObjectsDateFrom(connection, startDate, stationCode, setNo,
+    tripNo, line):
+    query = "SELECT arrTime, depTime, destination, destCode, platformNumber " \
+            "FROM trainsArrDep WHERE stationCode = %s AND setNo = %s " \
+            "AND tripNo = %s AND stationLineCode = %s AND arrTime >= %s"
     cursor = connection.cursor()
-    cursor.execute(query, (stationCode, setNo, tripNo, line))
+    cursor.execute(query, (stationCode, setNo, tripNo, line, startDate))
     return cursor.fetchall()
 
 def delTrainArrDepObject(connection, stationCode, setNo, tripNo, aroundDate,
@@ -149,11 +184,23 @@ def filterTrainsByStationIDAndDate(connection, stationCode, setNo, tripNo,
         item[4], item[5], item[6], item[7], item[8], item[9]),
         cursor.fetchall())
 
+def getUniqueSetTripNos(connection, startDate):
+    query = "SELECT DISTINCT setNo, tripNo FROM trainsArrDep WHERE " \
+        "arrTime >= %s"
+    cursor = connection.cursor()
+    cursor.execute(query, (startDate,))
+    return cursor.fetchall()
+
+def getStationNameById(connection, code):
+    query = "SELECT name FROM stations WHERE code = %s"
+    cursor = connection.cursor()
+    cursor.execute(query, (code,))
+    return cursor.fetchall()
+
 def addPlatformTree(connection, platformObj, stationObj):
     addPlatformObjectIfNotExists(connection, platformObj, stationObj)
     for trainObj in platformObj.trains:
         addTrainObject(connection, trainObj, platformObj, stationObj)
-        # TODO move this out of here
         timetable_analyser.setTrainArrDepFromPrev(connection, trainObj,
             platformObj, stationObj)
 
