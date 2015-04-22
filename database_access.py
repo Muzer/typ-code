@@ -197,6 +197,14 @@ def getStationNameById(connection, code):
     cursor.execute(query, (code,))
     return cursor.fetchall()
 
+def searchStationLine(connection, station, line):
+    query = "SELECT code, lineCode FROM stations WHERE (code = %s OR " \
+        "name LIKE %s) AND (lineCode = %s OR lineName LIKE %s)"
+    cursor = connection.cursor()
+    cursor.execute(query, (station, "%" + station + "%", line,
+      "%" + line + "%"))
+    return cursor.fetchall()
+
 def addPlatformTree(connection, platformObj, stationObj):
     addPlatformObjectIfNotExists(connection, platformObj, stationObj)
     for trainObj in platformObj.trains:
