@@ -115,31 +115,48 @@ def findTrainArrDepObjectsNoIds(connection, stationCode, aroundDate, line):
     return map(lambda item : {"lcid": item[0], "setNo": item[1],
       "tripNo": item[2], "destination": item[3], "destCode": item[4],
       "ln": item[5], "platformNumber": item[6],
-      "aArrTime": item[7].strftime("%H%M"),
-      "aDepTime": item[8].strftime("%H%M")}, results)
+      "aArrTime": item[7].strftime("%H%M"), "oaArrTime": item[7],
+      "aDepTime": item[8].strftime("%H%M"), "oaDepTime": item[8]}, results)
+
+def assTime(timedelta, aroundDate):
+    # We need to assign the time to a date.
+    assdTime = datetime.datetime.combine(aroundDate.date(), \
+        (datetime.datetime.min + timedelta).time())
+    # now correct for day boundary
+    if assdTime > aroundDate + datetime.timedelta(hours=12):
+        assdTime -= datetime.timedelta(days=1)
+    if assdTime < aroundDate - datetime.timedelta(hours=12):
+        assdTime += datetime.timedelta(days=1)
+    return assdTime
 
 def findTimetableEntriesNoIds(connection, stationCode, aroundDate, line):
     query = "SELECT setNo, tripNo, destination, destCode, stationLineCode, " \
             "platformNumber, arrTime, depTime FROM timetables WHERE " \
-            "stationCode = %s AND (arrTime BETWEEN %s AND %s OR depTime " \
-            "BETWEEN %s AND %s) AND stationLineCode = %s AND daysOfWeek = %s " \
+            "stationCode = %s AND (arrTime BETWEEN %s AND %s OR " \
+            "depTime BETWEEN %s AND %s OR " \
+            "(%s >= TIME '22:00' AND (arrTime BETWEEN %s AND TIME '24:00' OR" \
+            " arrTime BETWEEN TIME '00:00' AND %s OR " \
+            "depTime BETWEEN %s AND TIME '24:00' OR " \
+            "depTime BETWEEN TIME '00:00' AND %s))) AND " \
+            "stationLineCode = %s AND daysOfWeek = %s " \
             "ORDER BY depTime, arrTime"
     cursor = connection.cursor()
     weekday = "S" if aroundDate.weekday() == 5 else "U" if \
         aroundDate.weekday() == 6 else "W"
-    cursor.execute(query, (stationCode, (aroundDate - datetime.timedelta(
-        hours=1)).time(), (aroundDate + datetime.timedelta(hours=1)).time(),
-        (aroundDate - datetime.timedelta(hours=1)).time(), (aroundDate
-          + datetime.timedelta(hours=1)).time(), line, weekday))
+    timea = (aroundDate - datetime.timedelta(hours=1)).time()
+    timeb = (aroundDate + datetime.timedelta(hours=1)).time()
+    cursor.execute(query, (stationCode, timea, timeb, timea, timeb, timea,
+      timea, timeb, timea, timeb, line, weekday))
     results = cursor.fetchall()
     return map(lambda item : {"setNo": item[0], "tripNo": item[1],
       "destination": item[2], "destCode": item[3], "ln": item[4],
       "platformNumber": item[5],
       "sArrTime": (datetime.datetime.min + item[6]).time().strftime("%H%M"),
-      "sDepTime": (datetime.datetime.min + item[7]).time().strftime("%H%M")},
-      results)
+      "osArrTime": assTime(item[6], aroundDate),
+      "sDepTime": (datetime.datetime.min + item[7]).time().strftime("%H%M"),
+      "osDepTime": assTime(item[7], aroundDate)}, results)
 
-def findTrainArrDepObjectDate(connection, stationCode, setNo, tripNo, 
+def findTrainArrDepObjectDate(connection, stationCode, setNo, tripNo,
     aroundDate, line):
     query = "SELECT arrTime, depTime, lcid FROM trainsArrDep WHERE " \
         "stationCode = %s AND setNo = %s AND tripNo = %s AND " \
@@ -149,6 +166,46 @@ def findTrainArrDepObjectDate(connection, stationCode, setNo, tripNo,
         datetime.timedelta(hours=12),
         aroundDate + datetime.timedelta(hours=12), line))
     return cursor.fetchall()
+
+def findTrainArrDepObjectNoStn(connection, setNo, tripNo, aroundDate, line):
+    query = "SELECT t.arrTime, t.depTime, t.lcid, t.destination, t.destCode," \
+        " t.stationCode, t.platformNumber, s.name FROM trainsArrDep t, " \
+        "stations s WHERE t.setNo = %s AND t.tripNo = %s AND " \
+        "t.arrTime BETWEEN %s AND %s AND t.stationLineCode = %s AND " \
+        "t.stationCode = s.code ORDER BY depTime, arrTime"
+    cursor = connection.cursor()
+    cursor.execute(query, (setNo, tripNo, aroundDate -
+        datetime.timedelta(hours=12),
+        aroundDate + datetime.timedelta(hours=12), line))
+    results = cursor.fetchall()
+    return map(lambda item : {"lcid": item[2], "stationCode": item[5],
+      "stationName": item[7], "destination": item[3], "destCode": item[4],
+      "platformNumber": item[6],
+      "aArrTime": item[0].strftime("%H%M"), "oaArrTime": item[0],
+      "aDepTime": item[1].strftime("%H%M"), "oaDepTime": item[1]}, results)
+
+def findTimetableEntriesNoStn(connection, setNo, tripNo, aroundDate, line):
+    query = "SELECT t.arrTime, t.depTime, t.destination, t.destCode, " \
+        "t.stationCode, t.platformNumber, s.name FROM timetables t, " \
+        "stations s WHERE t.setNo = %s AND t.tripNo = %s AND " \
+        "(t.arrTime BETWEEN %s AND TIME '24:00' OR " \
+        "t.arrTime BETWEEN TIME '00:00' AND %s) AND t.stationLineCode = %s " \
+        "AND daysOfWeek = %s AND t.stationCode = s.code " \
+        "ORDER BY depTime, arrTime"
+    cursor = connection.cursor()
+    weekday = "S" if aroundDate.weekday() == 5 else "U" if \
+        aroundDate.weekday() == 6 else "W"
+    cursor.execute(query, (setNo, tripNo, (aroundDate -
+        datetime.timedelta(hours=12)).time(),
+        (aroundDate + datetime.timedelta(hours=12)).time(), line, weekday))
+    results = cursor.fetchall()
+    return map(lambda item : {"stationCode": item[4],
+      "stationName": item[6], "destination": item[2], "destCode": item[3],
+      "platformNumber": item[5],
+      "sArrTime": (datetime.datetime.min + item[0]).time().strftime("%H%M"),
+      "osArrTime": assTime(item[0], aroundDate),
+      "sDepTime": (datetime.datetime.min + item[1]).time().strftime("%H%M"),
+      "osDepTime": assTime(item[1], aroundDate)}, results)
 
 def findTrainArrDepObjectsDateFrom(connection, startDate, stationCode, setNo,
     tripNo, line):
@@ -193,6 +250,12 @@ def getUniqueSetTripNos(connection, startDate):
 
 def getStationNameById(connection, code):
     query = "SELECT name FROM stations WHERE code = %s"
+    cursor = connection.cursor()
+    cursor.execute(query, (code,))
+    return cursor.fetchall()
+
+def getLineNameById(connection, code):
+    query = "SELECT lineName FROM stations WHERE lineCode = %s"
     cursor = connection.cursor()
     cursor.execute(query, (code,))
     return cursor.fetchall()

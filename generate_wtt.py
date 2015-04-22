@@ -15,6 +15,8 @@ def generateWtt():
     uniqueSetTripNos = database_access.getUniqueSetTripNos(connection,
         latestWttStartDate)
     for setNo, tripNo in uniqueSetTripNos:
+        if setNo == "000":
+            continue
         for line, station in linedefs.victoria:
             print((setNo, tripNo, line, station))
             # Mon-Fri

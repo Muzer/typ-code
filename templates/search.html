@@ -8,7 +8,7 @@
     <meta name="author" content="">
     <link rel="icon" href="../../favicon.ico">
 
-    <title>{{ stationName }} &mdash; Real Time London Underground</title>
+    <title>Search &mdash; Real Time London Underground</title>
 
     <!-- Bootstrap core CSS -->
     <link href="/static/css/bootstrap.min.css" rel="stylesheet">
@@ -54,10 +54,10 @@
         <div class="form-group">
           <div class="row">
             <div class='col-xs-3'>
-              <input type='text' name='station' id='station' class="form-control" value='{{ station }}' />
+              <input type='text' name='station' id='station' class="form-control" value='Station' />
             </div>
             <div class='col-xs-1'>
-              <input type='text' name='line' id='line' class="form-control" value='{{ line }}' />
+              <input type='text' name='line' id='line' class="form-control" value='Line' />
             </div>
             <div class='col-xs-5'>
               <input type='text' name='datetime' class="form-control" id='datetime' />
@@ -69,40 +69,6 @@
         </div>
       </form>
     </div>
-    <div class="container" role="main">
-
-      <table class="table"><thead>
-        <tr>
-          <th>Leading car</th>
-          <th>Set no</th>
-          <th>Trip no</th>
-          <th>Destination</th>
-          <th>Dest Code</th>
-          <th>Line</th>
-          <th>Platform Number</th>
-          <th>Plan Arr</th>
-          <th>Plan Dep</th>
-          <th>Act Arr</th>
-          <th>Act Dep</th>
-        </tr></thead>
-        {% for train in results %}
-        <tr>
-          <td>{{ train.lcid }}</td>
-          <td>{{ train.setNo }}</td>
-          <td>{{ train.tripNo }}</td>
-          <td><a href="{{ train.url }}">{{ train.destination }}</a></td>
-          <td>{{ train.destCode }}</td>
-          <td>{{ train.ln }}</td>
-          <td>{{ train.platformNumber }}</td>
-          <td>{{ train.sArrTime }}</td>
-          <td>{{ train.sDepTime }}</td>
-          <td>{{ train.aArrTime }}</td>
-          <td>{{ train.aDepTime }}</td>
-        </tr>
-        {% endfor %}
-      </table>
-
-    </div><!-- /.container -->
 
 
     <!-- Bootstrap core JavaScript
@@ -112,6 +78,6 @@
     <script src="/static/js/moment-with-locales.min.js"></script>
     <script src="/static/js/bootstrap.min.js"></script>
     <script src="/static/js/bootstrap-datetimepicker.min.js"></script>
-    <script type="text/javascript">$(function () { $('#datetime').datetimepicker({sideBySide: true, locale: 'en-gb', defaultDate: {{ date }}});});</script>
+    <script type="text/javascript">$(function () { $('#datetime').datetimepicker({sideBySide: true, locale: 'en-gb'});});</script>
   </body>
 </html>
