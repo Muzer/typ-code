@@ -98,7 +98,8 @@ CREATE TABLE `timetables` (
 
 
 
-data_logger should be left running continuously.
+data_logger should be left running continuously, best to run it through
+loop-wrapper.sh in case of any unforseen problems.
 
 generate_wtt should be run occasionally to calculate the working timetable. It
 should only be run after the data logger has been running for at least a few
