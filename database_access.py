@@ -7,7 +7,7 @@ import timetable_analyser
 
 def connectToDb():
     return mysql.connector.connect(user='rtlul', password='dummypassword',
-            database='rtlul') # TODO make this read from a file
+            database='rtlul')
 
 def addStationObjectIfNotExists(connection, stationObj):
     # Check for existence
