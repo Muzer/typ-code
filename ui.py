@@ -131,22 +131,23 @@ def trainView(line, setNo, tripNo, year, month, day, time):
     realRes = list(realRes)
     timetableRes = list(timetableRes)
     # Grab the details from the actual running (if possible). This is more
-    # likely to be up to date. Grab it from the LAST entry for this reason too
+    # likely to be up to date. Grab it from the middle entry, most likely to be
+    # representative (trains often go out of service without changing trip no)
     if realRes != []:
-        lcid = realRes[-1]["lcid"]
-        destination = realRes[-1]["destination"]
-        destCode = realRes[-1]["destCode"]
+        lcid = realRes[len(realRes)//2]["lcid"]
+        destination = realRes[len(realRes)//2]["destination"]
+        destCode = realRes[len(realRes)//2]["destCode"]
     else:
         lcid = None
-        destination = timetableRes[-1]["destination"]
-        destCode = timetableRes[-1]["destCode"]
+        destination = timetableRes[len(timetableRes)//2]["destination"]
+        destCode = timetableRes[len(timetableRes)//2]["destCode"]
     # Sanity check things. No good displaying data for a completely different
-    # train, after all...
+    # train, after all... also include trains going out of service at the end
     realRes = list(filter(lambda x: x["lcid"] == lcid and
-                          x["destination"] == destination and
-                          x["destCode"] == destCode, realRes))
-    timetableRes = list(filter(lambda x: x["destination"] == destination and
-                               x["destCode"] == destCode, timetableRes))
+                          (x["destCode"] == destCode or
+                           x["destCode"] == "749"), realRes))
+    timetableRes = list(filter(lambda x: x["destCode"] == destCode or
+                               x["destCode"] == "749", timetableRes))
     # Now we have data as close as can be expected to sanity. So we combine it.
     results = []
     for train in realRes:
