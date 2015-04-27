@@ -43,45 +43,6 @@ def setTrainArrDepFromPrev(connection, train, platform, station):
     database_access.addTrainArrDepObject(connection, train, platform,
                                          station, arrTime, depTime)
 
-def getTrainArrDep(connection, stationCode, setNo, tripNo, aroundDate, line):
-    """Calculate arrival and departure times for a train."""
-    results = database_access.filterTrainsByStationIDAndDate(
-        connection, stationCode, setNo, tripNo, aroundDate, line)
-    results = list(results)
-
-    # Get the earliest time for it to have arrived in the station
-    arrivedTimes = (item for item in results if item.secondsTo == 0)
-    arrivedTimes = sorted(arrivedTimes, key=lambda x: x.whenCreated)
-    earliestArrived = arrivedTimes[0] if len(arrivedTimes) != 0 else None
-
-    # Get the latest time for it to still be in the station (before depart)
-    latestArrived = None
-    for latestArrived in arrivedTimes:
-        pass
-
-    # Get the most accurate time for predicted arrival (LUL's predictions)
-    arrLulPred = None
-    for arrLulPred in results:
-        if arrLulPred.secondsTo != 0:
-            break
-
-    # Predicted arrival time is earliest of arrived time and predicted arrive
-    arrPredTime = None
-    if arrLulPred != None:
-        arrPredTime = arrLulPred.whenCreated + \
-            datetime.timedelta(seconds=arrLulPred.secondsTo)
-    if earliestArrived != None and (
-            arrPredTime == None or earliestArrived.whenCreated < arrPredTime):
-        arrPredTime = earliestArrived.whenCreated
-
-    depPredTime = None
-    if latestArrived != None:
-        depPredTime = latestArrived.whenCreated
-    elif arrPredTime != None:
-        depPredTime = arrPredTime + datetime.timedelta(seconds=dwellTime)
-
-    return (arrPredTime, depPredTime)
-
 def get_seconds(time):
     """Get number of seconds from a time"""
     return time.hour * 60 * 60 + time.minute * 60 + time.second

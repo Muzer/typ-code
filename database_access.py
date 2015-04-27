@@ -260,23 +260,6 @@ def delTrainArrDepObject(connection, stationCode, setNo, tripNo, aroundDate,
                            datetime.timedelta(hours=12),
                            aroundDate + datetime.timedelta(hours=12), line))
 
-def filterTrainsByStationIDAndDate(connection, stationCode, setNo, tripNo,
-                                   aroundDate, line):
-    """Return train objects by station code, set number, trip number, date
-       (within twelve hours) and line."""
-    query = "SELECT lcid, setNo, tripNo, secondsTo, location, destination, " \
-        "destCode, trackCode, ln, whenCreated FROM trains WHERE " \
-        "stationCode = %s AND setNo = %s AND tripNo = %s AND " \
-        "whenCreated BETWEEN %s AND %s AND stationLineCode = %s " \
-        "ORDER BY secondsTo ASC, whenCreated DESC"
-    cursor = connection.cursor()
-    cursor.execute(query, (stationCode, setNo, tripNo, aroundDate -
-                           datetime.timedelta(hours=12),
-                           aroundDate + datetime.timedelta(hours=12), line))
-    return map(lambda item: station.Train(
-        item[0], item[1], item[2], item[3], item[4], item[5], item[6], item[7],
-        item[8], item[9]), cursor.fetchall())
-
 def getUniqueSetTripNos(connection, startDate):
     """Get a list of tuples containing set and trip numbers in use from a
        certain date."""
