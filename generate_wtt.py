@@ -23,34 +23,17 @@ def generateWtt():
         for line, station in linedefs.victoria:
             print((setNo, tripNo, line, station))
             # Mon-Fri
-            arrTime, depTime, destination, destCode, platformNumber = \
-            timetable_analyser.calculate_median(
-                connection, latestWttStartDate,
-                station, setNo, tripNo, line, 0, 5)
-            if arrTime != None and depTime != None:
-                database_access.addTimetableEntry(
-                    connection, setNo, tripNo,
-                    destination, destCode, station, line, platformNumber,
-                    arrTime, depTime, datetime.date.today(), "W")
-            # Sat
-            arrTime, depTime, destination, destCode, platformNumber = \
-            timetable_analyser.calculate_median(
-                connection, latestWttStartDate,
-                station, setNo, tripNo, line, 5, 6)
-            if arrTime != None and depTime != None:
-                database_access.addTimetableEntry(
-                    connection, setNo, tripNo,
-                    destination, destCode, station, line, platformNumber,
-                    arrTime, depTime, datetime.date.today(), "S")
-            # Sun
-            arrTime, depTime, destination, destCode, platformNumber = \
-            timetable_analyser.calculate_median(
-                connection, latestWttStartDate,
-                station, setNo, tripNo, line, 6, 7)
-            if arrTime != None and depTime != None:
-                database_access.addTimetableEntry(
-                    connection, setNo, tripNo,
-                    destination, destCode, station, line, platformNumber,
-                    arrTime, depTime, datetime.date.today(), "U")
+            for dayFrom, dayTo, dayChar in [(0, 5, "W"),  # Mon-Fri
+                                            (5, 6, "S"),  # Sat
+                                            (6, 7, "U")]: # Sun
+                arrTime, depTime, destination, destCode, platformNumber = \
+                timetable_analyser.calculate_median(
+                    connection, latestWttStartDate,
+                    station, setNo, tripNo, line, dayFrom, dayTo)
+                if arrTime != None and depTime != None:
+                    database_access.addTimetableEntry(
+                        connection, setNo, tripNo,
+                        destination, destCode, station, line, platformNumber,
+                        arrTime, depTime, datetime.date.today(), dayChar)
 
 generateWtt()

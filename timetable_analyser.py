@@ -13,18 +13,13 @@ import collections
 
 dwellTime = 20
 
-def setTrainArrDepFromPrev(connection, train, platform, station):
-    """Given a train, create and add a train arrival/departure record for the
-       train."""
-    results = database_access.findTrainArrDepObjectDate(
-        connection, station.code, train.setNo, train.tripNo, train.whenCreated,
-        station.lineCode)
-    if len(results) == 0:
+def calculateTrainArrDepFromPrev(connection, prev, train):
+    if len(prev) == 0:
         arrTime = train.whenCreated + datetime.timedelta(
             seconds=train.secondsTo)
         depTime = arrTime + datetime.timedelta(seconds=dwellTime)
     else:
-        result = results[0] # Assume only one; there should be only one
+        result = prev[0] # Assume only one; there should be only one
         oldArrTime = result[0]
         oldDepTime = result[1]
         if train.secondsTo == 0: # only change if violates expectations
@@ -40,6 +35,15 @@ def setTrainArrDepFromPrev(connection, train, platform, station):
             arrTime = train.whenCreated + datetime.timedelta(
                 seconds=train.secondsTo)
             depTime = arrTime + datetime.timedelta(seconds=dwellTime)
+    return (arrTime, depTime)
+
+def setTrainArrDepFromPrev(connection, train, platform, station):
+    """Given a train, create and add a train arrival/departure record for the
+       train."""
+    results = database_access.findTrainArrDepObjectDate(
+        connection, station.code, train.setNo, train.tripNo, train.whenCreated,
+        station.lineCode)
+    arrTime, depTime = calculateTrainArrDepFromPrev(connection, results, train)
     database_access.addTrainArrDepObject(connection, train, platform,
                                          station, arrTime, depTime)
 
