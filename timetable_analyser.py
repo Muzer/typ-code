@@ -53,6 +53,7 @@ def getTime(seconds):
 
 def median(dictArray, getAttr):
     """Calculate a median from a list of dicts with dictArray[getAttr] being a
+       datetime and only the times being relevant (ie not dates). Returns a
        time."""
     results = sorted(dictArray, key=lambda x: x[getAttr].time())
     if len(results) < 1:
