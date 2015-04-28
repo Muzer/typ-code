@@ -22,12 +22,11 @@ def generateWtt():
             continue
         for line, station in linedefs.victoria:
             print((setNo, tripNo, line, station))
-            # Mon-Fri
             for dayFrom, dayTo, dayChar in [(0, 5, "W"),  # Mon-Fri
                                             (5, 6, "S"),  # Sat
                                             (6, 7, "U")]: # Sun
                 arrTime, depTime, destination, destCode, platformNumber = \
-                timetable_analyser.calculate_median(
+                timetable_analyser.calculateMedian(
                     connection, latestWttStartDate,
                     station, setNo, tripNo, line, dayFrom, dayTo)
                 if arrTime != None and depTime != None:

@@ -5,15 +5,9 @@ import database_access
 import datetime
 import collections
 
-#station="VIC"
-#line="V"
-#aroundDate=datetime.datetime(2015, 2, 3, 12, 0, 0)
-#setNo="007"
-#tripNo="2"
-
 dwellTime = 20
 
-def calculateTrainArrDepFromPrev(connection, prev, train):
+def calculateTrainArrDepFromPrev(prev, train):
     if len(prev) == 0:
         arrTime = train.whenCreated + datetime.timedelta(
             seconds=train.secondsTo)
@@ -43,15 +37,15 @@ def setTrainArrDepFromPrev(connection, train, platform, station):
     results = database_access.findTrainArrDepObjectDate(
         connection, station.code, train.setNo, train.tripNo, train.whenCreated,
         station.lineCode)
-    arrTime, depTime = calculateTrainArrDepFromPrev(connection, results, train)
+    arrTime, depTime = calculateTrainArrDepFromPrev(results, train)
     database_access.addTrainArrDepObject(connection, train, platform,
                                          station, arrTime, depTime)
 
-def get_seconds(time):
+def getSeconds(time):
     """Get number of seconds from a time"""
     return time.hour * 60 * 60 + time.minute * 60 + time.second
 
-def get_time(seconds):
+def getTime(seconds):
     """Convert number of seconds to a time."""
     return datetime.time(hour=int(seconds + 0.5) // (60 * 60),
                          minute=(int(seconds + 0.5) % (60 * 60)) // 60,
@@ -66,10 +60,10 @@ def median(dictArray, getAttr):
     if len(results) % 2 == 1:
         return results[(len(results) - 1) // 2][getAttr].time()
     if len(results) % 2 == 0:
-        return get_time((
-            get_seconds(
+        return getTime((
+            getSeconds(
                 results[len(results) // 2][getAttr].time())
-            + get_seconds(
+            + getSeconds(
                 results[len(results) // 2 - 1][getAttr].time())) / 2)
 
 def mode(dictArray, getAttr):
@@ -78,13 +72,7 @@ def mode(dictArray, getAttr):
     counter = collections.Counter(map(lambda x: x[getAttr], dictArray))
     return counter.most_common(1)[0][0]
 
-def calculate_median(connection, startDate, stationCode, setNo, tripNo, line,
-                     dayFrom, dayTo):
-    """Calculate median for timetable for given train info. dayFrom is minimum
-       day of the week (where 0 is Monday) and dayTo is max plus one day of the
-       week"""
-    results = database_access.findTrainArrDepObjectsDateFrom(
-        connection, startDate, stationCode, setNo, tripNo, line)
+def calculateMedianFromTrainArrDeps(results, dayFrom, dayTo):
     results = [x for x in results if dayFrom <= x[0].weekday() < dayTo]
 
     # Calculate median
@@ -100,3 +88,12 @@ def calculate_median(connection, startDate, stationCode, setNo, tripNo, line,
 
     print(results)
     return (arrMedian, depMedian, destMode, dCodeMode, platNoMode)
+
+def calculateMedian(connection, startDate, stationCode, setNo, tripNo, line,
+                     dayFrom, dayTo):
+    """Calculate median for timetable for given train info. dayFrom is minimum
+       day of the week (where 0 is Monday) and dayTo is max plus one day of the
+       week"""
+    results = database_access.findTrainArrDepObjectsDateFrom(
+        connection, startDate, stationCode, setNo, tripNo, line)
+    return calculateMedianFromTrainArrDeps(results, dayFrom, dayTo)
